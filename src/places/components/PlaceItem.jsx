@@ -4,9 +4,13 @@ import Button from "../../shared/components/FormElements/Button";
 import Map from "../../shared/components/UIElements/Map";
 import Modal from "../../shared/components/UIElements/Modal";
 import { AuthContext } from "../../shared/context/Auth-context";
+import { useHttpClient } from "../../shared/Hooks/http-hook";
 import "./placeItem.css";
+import ErrorModal from "../../shared/components/UIElements/ErrorModal";
+import LoadingSpinner from "../../shared/components/UIElements/LoadingSpinner";
 
 const PlaceItem = (props) => {
+  const { isLoading, error, sendRequest, clearError } = useHttpClient();
   const auth = useContext(AuthContext);
 
   const [showMap, setShowMap] = useState(false);
@@ -19,13 +23,25 @@ const PlaceItem = (props) => {
   const showDeleteWarning = () => setShowConfirmModal(true);
   const cancelDeleteWarning = () => setShowConfirmModal(false);
 
-  const confirmDeleteWarning = () => {
-    console.log("Deleted");
+  const confirmDeleteWarning = async () => {
     setShowConfirmModal(false);
+
+    try {
+      await sendRequest(
+        `${process.env.REACT_APP_BACKEND_URL}/places/${props.id}`,
+        "DELETE",
+        null,
+        {
+          Authorization: "Bearers " + auth.token,
+        }
+      );
+      props.onDelete(props.id);
+    } catch (err) {}
   };
 
   return (
     <React.Fragment>
+      <ErrorModal error={error} onClear={clearError} />
       <Modal
         show={showMap}
         onCancel={closeMap}
@@ -35,7 +51,7 @@ const PlaceItem = (props) => {
         footer={<Button onClick={closeMap}>CLOSE</Button>}
       >
         <div className="map-container">
-          <Map center={props.coordinates} zoom={16} />
+          <Map center={props.coordinates} zoom={14} text={props.title} />
         </div>
       </Modal>
       <Modal
@@ -61,8 +77,12 @@ const PlaceItem = (props) => {
       </Modal>
       <li className="place-item">
         <Card className="place-item__content">
+          {isLoading && <LoadingSpinner asOverlay />}
           <div className="place-item__image">
-            <img src={props.image} alt={props.title} />
+            <img
+              src={`${process.env.REACT_APP_ASSET_URL}/${props.image}`}
+              alt={props.title}
+            />
           </div>
           <div className="place-item__info">
             <h2>{props.title}</h2>
@@ -73,10 +93,10 @@ const PlaceItem = (props) => {
             <Button inverse onClick={openMap}>
               VIEW ON MAP
             </Button>
-            {auth.isLoggedIn && (
+            {auth.userId === props.creatorId && (
               <Button to={`/places/${props.id}`}>EDIT</Button>
             )}
-            {auth.isLoggedIn && (
+            {auth.userId === props.creatorId && (
               <Button onClick={showDeleteWarning} danger>
                 DELETE
               </Button>

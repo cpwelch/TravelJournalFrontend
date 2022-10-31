@@ -19,7 +19,10 @@
 }
 
 .main-navigation__title {
+  font-family: "Lilita One", cursive;
+  letter-spacing: 1px;
   color: white;
+  font-size: 3rem;
 }
 
 a {
@@ -36,6 +39,10 @@ a {
 }
 
 @media (min-width: 768px) {
+  .main-navigation__title {
+    margin-left: 2.5vw;
+  }
+
   .main-navigation__menu-btn {
     display: none;
   }
